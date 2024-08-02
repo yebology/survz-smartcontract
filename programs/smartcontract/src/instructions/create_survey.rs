@@ -8,12 +8,18 @@ pub struct CreateSurvey<'info> {
         init,
         payer=user,
         space=50000,
-        seeds=[b"create_survey", user.key().as_ref()],
+        seeds=[b"create_survey", user.key().as_ref(), &survey_amount.amount.to_le_bytes()],
         bump
     )]
     pub survey: Account<'info, Survey>,
     #[account(mut)]
     pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds=[b"survey_count"],
+        bump
+    )]
+    pub survey_amount: Account<'info, SurveyAmount>,
     pub system_program: Program<'info, System>
 }
 
@@ -28,7 +34,9 @@ pub fn handler(
     question_list: [Vec<String>; 5]
 ) -> Result<()> {
     let survey = &mut ctx.accounts.survey;
-    survey.id = 0;
+    let survey_amount = &mut ctx.accounts.survey_amount;
+
+    survey.id = survey_amount.amount;
     survey.title = title;
     survey.description = description;
     survey.creator = *ctx.accounts.user.key;
@@ -37,5 +45,7 @@ pub fn handler(
     survey.target_participant = target_participant;
     survey.reward_per_participant = reward_per_participant;
     survey.question_list = question_list;
+
+    survey_amount.amount += 1;
     Ok(())
 }
