@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 pub enum SurvzError {
     SurveyNotStarted,
     InvalidSurveyInput,
-    ParticipantTargetMustBeGreaterThanZero, 
-    InvalidTime
+    AllFieldMustBeAnswered,
+    InvalidTime,
+    AlreadyFillThisSurvey
 }

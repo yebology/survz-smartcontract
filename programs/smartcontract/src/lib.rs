@@ -33,13 +33,20 @@ pub mod smartcontract {
             target_participant, 
             reward_per_participant, 
             question_list
-        );
+        )?;
         Ok(())
     }
 
-    // pub fn fill_survey() -> Result<()> {
-    //     Ok(())
-    // }
+    pub fn fill_survey(
+        ctx: Context<FillSurvey>,
+        answer_list: [Vec<String>; 5]
+    ) -> Result<()> {
+        instructions::fill_survey::handler(
+            ctx,
+            answer_list
+        )?;
+        Ok(())
+    }
 
     // pub fn change_survey_status() -> Result<()> {
     //     Ok(())
