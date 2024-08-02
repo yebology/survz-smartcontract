@@ -7,7 +7,7 @@ pub struct CreateSurvey<'info> {
     #[account(
         init,
         payer=user,
-        space=50000,
+        space=Survey::MAXIMUM_SIZE,
         seeds=[b"create_survey", user.key().as_ref(), &survey_amount.amount.to_le_bytes()],
         bump
     )]
@@ -33,9 +33,25 @@ pub fn handler(
     reward_per_participant: u64, 
     question_list: [Vec<String>; 5]
 ) -> Result<()> {
+
+    if title.is_empty() || 
+    description.is_empty() || 
+    question_list.len() == 0 || 
+    reward_per_participant == 0 || 
+    target_participant == 0 {
+        return Err(SurvzError::InvalidSurveyInput.into());
+    }
+    
+    if 
+    open_timestamp == 0 || 
+    close_timestamp == 0 || 
+    open_timestamp > close_timestamp {
+        return Err(SurvzError::InvalidTime.into());
+    }
+
     let survey = &mut ctx.accounts.survey;
     let survey_amount = &mut ctx.accounts.survey_amount;
-
+    
     survey.id = survey_amount.amount;
     survey.title = title;
     survey.description = description;
@@ -44,6 +60,7 @@ pub fn handler(
     survey.close_timestamp = close_timestamp;
     survey.target_participant = target_participant;
     survey.reward_per_participant = reward_per_participant;
+    survey.state = SurvzState::Closed;
     survey.question_list = question_list;
 
     survey_amount.amount += 1;
