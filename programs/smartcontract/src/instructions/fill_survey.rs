@@ -24,19 +24,31 @@ pub fn handler(
     answer_list: [Vec<String>; 5]
 ) -> Result<()> {
     
-    if answer_list.len() != 5 {
-        return Err(SurvzError::AllFieldMustBeAnswered.into())
-    }
-    
     let answer = &mut ctx.accounts.answer;
     let user = &mut ctx.accounts.user;
     let survey = &mut ctx.accounts.survey;
-    
+
+    let rent = Rent::get()?.minimum_balance(survey.to_account_info().data_len());
+    let survey_balance = survey.to_account_info().lamports();
+    let amount = survey.reward_per_participant;
+
+    if survey.state == SurvzState::Closed {
+        return Err(SurvzError::SurveyNotStarted.into());
+    }
+
+    if (survey_balance - rent) < amount {
+        return Err(SurvzError::InsufficientFunds.into());
+    }
+
+    if answer_list.len() != 5 {
+        return Err(SurvzError::AllFieldMustBeAnswered.into());
+    }
+
     answer.user = user.key();
     answer.answer_list = answer_list;
 
-    **survey.to_account_info().try_borrow_lamports()? -= survey.reward_per_participant;
-    **user.to_account_info().try_borrow_lamports()? += survey.reward_per_participant;
+    ctx.accounts.survey.sub_lamports(amount)?;
+    ctx.accounts.user.add_lamports(amount)?;
 
     Ok(())
 }

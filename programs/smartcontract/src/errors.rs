@@ -6,5 +6,6 @@ pub enum SurvzError {
     InvalidSurveyInput,
     AllFieldMustBeAnswered,
     InvalidTime,
-    AlreadyFillThisSurvey
+    AlreadyFillThisSurvey,
+    InsufficientFunds
 }
