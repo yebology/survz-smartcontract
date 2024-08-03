@@ -49,7 +49,7 @@ pub mod smartcontract {
     }
 
     pub fn change_status(ctx: Context<ChangeStatus>) -> Result<()> {
-        instruction::change_status::handler(ctx)?;
+        instructions::change_status::handler(ctx)?;
         Ok(())
     }
 }

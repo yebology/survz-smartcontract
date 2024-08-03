@@ -5,7 +5,7 @@ use crate::*;
 #[derive(Accounts)]
 pub struct FillSurvey<'info> {
     #[account(
-        init,
+        init_if_needed,
         payer=user,
         space=Answer::MAXIMUM_SIZE,
         seeds=[b"fill_survey", user.key().as_ref(), survey.key().as_ref()],
@@ -32,17 +32,8 @@ pub fn handler(
     let survey_balance = survey.to_account_info().lamports();
     let amount = survey.reward_per_participant;
 
-    let (answer_key, _) = Pubkey::find_program_address(
-        &[b"fill_survey", user.key().as_ref(), survey.key().as_ref()],
-        ctx.program_id
-    );
-
     if survey.state == SurvzState::Closed {
         return Err(SurvzError::SurveyNotStarted.into());
-    }
-
-    if answer_key == answer.key() {
-        return Err(SurvzError::AlreadyFillThisSurvey.into());
     }
 
     if (survey_balance - rent) < amount {
