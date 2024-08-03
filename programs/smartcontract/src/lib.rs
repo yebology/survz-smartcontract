@@ -48,7 +48,8 @@ pub mod smartcontract {
         Ok(())
     }
 
-    // pub fn change_survey_status() -> Result<()> {
-    //     Ok(())
-    // }
+    pub fn change_status(ctx: Context<ChangeStatus>) -> Result<()> {
+        instruction::change_status::handler(ctx)?;
+        Ok(())
+    }
 }

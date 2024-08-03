@@ -8,7 +8,7 @@ pub struct FillSurvey<'info> {
         init,
         payer=user,
         space=Answer::MAXIMUM_SIZE,
-        seeds=[b"fill_survey", user.key().as_ref()],
+        seeds=[b"fill_survey", user.key().as_ref(), survey.key().as_ref()],
         bump
     )]
     pub answer: Account<'info, Answer>,
@@ -32,8 +32,17 @@ pub fn handler(
     let survey_balance = survey.to_account_info().lamports();
     let amount = survey.reward_per_participant;
 
+    let (answer_key, _) = Pubkey::find_program_address(
+        &[b"fill_survey", user.key().as_ref(), survey.key().as_ref()],
+        ctx.program_id
+    );
+
     if survey.state == SurvzState::Closed {
         return Err(SurvzError::SurveyNotStarted.into());
+    }
+
+    if answer_key == answer.key() {
+        return Err(SurvzError::AlreadyFillThisSurvey.into());
     }
 
     if (survey_balance - rent) < amount {
@@ -47,8 +56,10 @@ pub fn handler(
     answer.user = user.key();
     answer.answer_list = answer_list;
 
-    ctx.accounts.survey.sub_lamports(amount)?;
-    ctx.accounts.user.add_lamports(amount)?;
+    survey.sub_lamports(amount)?;
+    user.add_lamports(amount)?;
+
+    survey.total_reward -= amount;
 
     Ok(())
 }
