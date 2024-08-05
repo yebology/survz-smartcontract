@@ -4,12 +4,17 @@ use anchor_lang::system_program;
 use crate::*;
 
 #[derive(Accounts)]
+#[instruction(id: u64)]
 pub struct CreateSurvey<'info> {
     #[account(
         init,
         payer=user,
         space=Survey::MAXIMUM_SIZE,
-        seeds=[b"create_survey", user.key().as_ref()],
+        seeds=[
+            b"survey".as_ref(), 
+            user.key().as_ref(),
+            &id.to_le_bytes()
+        ],
         bump
     )]
     pub survey: Account<'info, Survey>,
@@ -20,6 +25,7 @@ pub struct CreateSurvey<'info> {
 
 pub fn handler(
     ctx: Context<CreateSurvey>, 
+    id: u64,
     title: String, 
     description: String, 
     open_timestamp: u64, 
@@ -29,7 +35,8 @@ pub fn handler(
     question_list: Vec<String>
 ) -> Result<()> {
 
-    if title.is_empty() || 
+    if id == 0 || 
+    title.is_empty() || 
     description.is_empty() || 
     question_list.len() != 5 || 
     total_reward == 0 || 
@@ -64,7 +71,10 @@ pub fn handler(
     survey.target_participant = target_participant;
     survey.reward_per_participant = total_reward / target_participant;
     survey.total_reward = total_reward;
-    survey.state = SurvzState::Closed;
+    survey.state = match current_timestamp >= open_timestamp {
+        true => SurvzState::Open,
+        false => SurvzState::Closed
+    };
     survey.question_list = question_list;
 
     Ok(())

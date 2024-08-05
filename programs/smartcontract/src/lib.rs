@@ -16,6 +16,7 @@
 
         pub fn create_survey(
             ctx: Context<CreateSurvey>, 
+            id: u64,
             title: String, 
             description: String, 
             open_timestamp: u64, 
@@ -26,6 +27,7 @@
         ) -> Result<()> {
             instructions::create_survey::handler(
                 ctx, 
+                id,
                 title, 
                 description, 
                 open_timestamp, 
@@ -39,7 +41,7 @@
 
         pub fn fill_survey(
             ctx: Context<FillSurvey>,
-            answer_list: [Vec<String>; 5]
+            answer_list: Vec<String>
         ) -> Result<()> {
             instructions::fill_survey::handler(
                 ctx,

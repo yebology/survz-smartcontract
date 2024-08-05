@@ -8,7 +8,7 @@ pub struct FillSurvey<'info> {
         init_if_needed,
         payer=user,
         space=Answer::MAXIMUM_SIZE,
-        seeds=[b"fill_survey", user.key().as_ref(), survey.key().as_ref()],
+        seeds=[b"answer".as_ref(), user.key().as_ref(), survey.key().as_ref()],
         bump
     )]
     pub answer: Account<'info, Answer>,
@@ -21,7 +21,7 @@ pub struct FillSurvey<'info> {
 
 pub fn handler(
     ctx: Context<FillSurvey>,
-    answer_list: [Vec<String>; 5]
+    answer_list: Vec<String>
 ) -> Result<()> {
     
     let answer = &mut ctx.accounts.answer;
@@ -44,7 +44,8 @@ pub fn handler(
         return Err(SurvzError::AllFieldMustBeAnswered.into());
     }
 
-    answer.user = user.key();
+    answer.user = *user.key;
+    answer.survey = *survey.key;
     answer.answer_list = answer_list;
 
     survey.sub_lamports(amount)?;
