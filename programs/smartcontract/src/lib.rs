@@ -41,10 +41,12 @@
 
         pub fn fill_survey(
             ctx: Context<FillSurvey>,
+            survey_id: u64,
             answer_list: Vec<String>
         ) -> Result<()> {
             instructions::fill_survey::handler(
                 ctx,
+                survey_id,
                 answer_list
             )?;
             Ok(())

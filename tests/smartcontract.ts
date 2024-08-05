@@ -13,7 +13,9 @@ describe("smartcontract", () => {
   const systemProgram = SystemProgram.programId;
   const program = anchor.workspace.Smartcontract as Program<Smartcontract>;
   const user = provider.wallet;
-  let reusableSurveyPda;
+  let surveyPda;
+  let answerPda;
+  let surveyId;
 
   const surveyTitle: string =
       "Solana vs Ethereum: Blockchain Comparison Survey";
@@ -42,12 +44,13 @@ describe("smartcontract", () => {
 
   it("can create survey!", async () => {
     const id = closeTimestamp.sub(openTimestamp);
-    const idToBuffer = id.toBuffer("le", 8);
-    const [surveyPda, _] = await anchor.web3.PublicKey.findProgramAddressSync(
+    console.log(id.toNumber());
+    surveyId = id.toBuffer("le", 8);
+    [surveyPda, ] = await anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("survey"), 
         user.publicKey.toBuffer(),
-        idToBuffer
+        surveyId
       ],
       program.programId
     );
@@ -71,6 +74,7 @@ describe("smartcontract", () => {
       .rpc();
 
     const account = await program.account.survey.fetch(surveyPda);
+    assert.strictEqual(account.id.toString(), id.toString());
     assert.strictEqual(account.title, surveyTitle);
     assert.strictEqual(account.description, surveyDescription);
     assert.strictEqual(
@@ -87,29 +91,30 @@ describe("smartcontract", () => {
     );
     assert.strictEqual(account.totalReward.toString(), totalReward.toString());
     assert.deepStrictEqual(account.questionList, questionList);
-    reusableSurveyPda = surveyPda;
   });
 
   it("can fill survey!", async () => {
-    const [answerPda, _] = await anchor.web3.PublicKey.findProgramAddressSync(
+    const surveyIdBn = new anchor.BN(surveyId, "le");
+    const id = new anchor.BN(surveyIdBn.toNumber());
+    console.log(id);
+    [answerPda, ] = await anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("answer"),
         user.publicKey.toBuffer(),
-        reusableSurveyPda.toBuffer()
+        surveyId
       ],
       program.programId
-    )
-
-    console.log(reusableSurveyPda);
+    );
 
     await program.methods
     .fillSurvey(
+      id,
       answerList
     )
     .accounts({
       user: user.publicKey,
       answer: answerPda,
-      survey: reusableSurveyPda,
+      survey: surveyPda,
       systemProgram: SystemProgram.programId
     })
     .rpc()

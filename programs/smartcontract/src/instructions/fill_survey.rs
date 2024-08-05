@@ -3,12 +3,17 @@ use anchor_lang::prelude::*;
 use crate::*;
 
 #[derive(Accounts)]
+#[instruction(survey_id: u64)]
 pub struct FillSurvey<'info> {
     #[account(
-        init_if_needed,
+        init,
         payer=user,
         space=Answer::MAXIMUM_SIZE,
-        seeds=[b"answer".as_ref(), user.key().as_ref(), survey.key().as_ref()],
+        seeds=[
+            b"answer".as_ref(), 
+            user.key().as_ref(),
+            &survey_id.to_le_bytes()
+        ],
         bump
     )]
     pub answer: Account<'info, Answer>,
@@ -21,6 +26,7 @@ pub struct FillSurvey<'info> {
 
 pub fn handler(
     ctx: Context<FillSurvey>,
+    survey_id: u64,
     answer_list: Vec<String>
 ) -> Result<()> {
     
@@ -44,8 +50,8 @@ pub fn handler(
         return Err(SurvzError::AllFieldMustBeAnswered.into());
     }
 
-    answer.user = *user.key;
-    answer.survey = *survey.key;
+    answer.user = user.key();
+    answer.survey_id = survey_id;
     answer.answer_list = answer_list;
 
     survey.sub_lamports(amount)?;

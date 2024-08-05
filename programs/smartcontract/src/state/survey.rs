@@ -8,6 +8,7 @@ pub enum SurvzState {
 
 #[account]
 pub struct Survey {
+    pub id: u64, // 8
     pub title: String, // 4 + 150 (maximum 100 bytes + 50 bytes other for safety)
     pub description: String, // 4 + 300 (maximum 256 bytes + 44 bytes other for safety)
     pub creator: Pubkey, // 32
@@ -21,5 +22,5 @@ pub struct Survey {
 }
 
 impl Survey {
-    pub const MAXIMUM_SIZE : usize = 8 + (4 + 150) + (4 + 300) + 32 + 8 +  8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
+    pub const MAXIMUM_SIZE : usize = 8 + 8 + (4 + 150) + (4 + 300) + 32 + 8 +  8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
 }

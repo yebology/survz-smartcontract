@@ -62,7 +62,8 @@ pub fn handler(
     system_program::transfer(cpi_context, total_reward)?;
 
     let survey = &mut ctx.accounts.survey;
-    
+
+    survey.id = id;
     survey.title = title;
     survey.description = description;
     survey.creator = *ctx.accounts.user.key;
