@@ -33,7 +33,7 @@ pub fn handler(
     let amount = survey.reward_per_participant;
 
     if survey.state == SurvzState::Closed {
-        return Err(SurvzError::SurveyNotStarted.into());
+        return Err(SurvzError::SurveyIsClosed.into());
     }
 
     if (survey_balance - rent) < amount {
@@ -51,6 +51,10 @@ pub fn handler(
     user.add_lamports(amount)?;
 
     survey.total_reward -= amount;
+
+    if (survey_balance - rent) < amount {
+        survey.state = SurvzState::Closed;
+    }
 
     Ok(())
 }

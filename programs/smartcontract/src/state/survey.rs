@@ -17,7 +17,7 @@ pub struct Survey {
     pub total_reward: u64, // 8
     pub reward_per_participant: u64, // 8
     pub state: SurvzState, // 1
-    pub question_list: [Vec<String>; 5], // 4 + ((256 + 44) * 5) // maximum 256 bytes/question + 44 bytes other for safety
+    pub question_list: Vec<String>, // 4 + ((256 + 44) * 5) // maximum 256 bytes/question + 44 bytes other for safety
 }
 
 impl Survey {

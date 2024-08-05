@@ -26,12 +26,12 @@ pub fn handler(
     close_timestamp: u64, 
     target_participant: u64, 
     total_reward: u64, 
-    question_list: [Vec<String>; 5]
+    question_list: Vec<String>
 ) -> Result<()> {
 
     if title.is_empty() || 
     description.is_empty() || 
-    question_list.len() == 0 || 
+    question_list.len() != 5 || 
     total_reward == 0 || 
     target_participant == 0 {
         return Err(SurvzError::InvalidSurveyInput.into());
