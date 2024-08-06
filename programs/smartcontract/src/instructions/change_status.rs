@@ -24,5 +24,6 @@ pub fn handler(ctx: Context<ChangeStatus>) -> Result<()> {
     survey.state == SurvzState::Open {
         survey.state = SurvzState::Closed;
     }
+    
     Ok(())
 }

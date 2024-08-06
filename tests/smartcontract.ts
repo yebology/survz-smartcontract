@@ -3,7 +3,6 @@ import { Program } from "@coral-xyz/anchor";
 import { Smartcontract } from "../target/types/smartcontract";
 import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import * as assert from "assert";
-import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 describe("smartcontract", () => {
   // Configure the client to use the local cluster.
@@ -21,9 +20,9 @@ describe("smartcontract", () => {
     "Solana vs Ethereum: Blockchain Comparison Survey";
   const surveyDescription: string =
     "We are conducting a survey to compare the usability of Solana and Ethereum. Share your experiences and preferences regarding transaction speed, ease of use, and overall satisfaction with each platform. Your feedback will contribute to a comprehensive comparison of these leading blockchains.";
-  const now = new Date().getTime();
-  const openTimestamp = new anchor.BN(now / 1000);
-  const closeTimestamp = new anchor.BN(now +(2 * 24 * 60 * 60));
+  const now = new Date().getTime(); 
+  let openTimestamp;
+  let closeTimestamp;
   const targetParticipant = new anchor.BN(100);
   const totalReward = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
   const questionList: string[] = [
@@ -33,7 +32,6 @@ describe("smartcontract", () => {
     "In your opinion, how does the developer experience on Solana compare to Ethereum? Please provide specific examples.",
     "What factors influenced your preference between Solana and Ethereum ?",
   ];
-
   const answerList: string[] = [
     "I like Solana's high throughput and low fees. Transactions are impressively fast.",
     "Ethereum's high gas fees and slow confirmations are challenging.",
@@ -43,6 +41,8 @@ describe("smartcontract", () => {
   ];
 
   it("can create survey!", async () => {
+    openTimestamp = new anchor.BN(now / 1000);
+    closeTimestamp = new anchor.BN(now + (2 * 24 * 60 * 60));
     const id = closeTimestamp.sub(openTimestamp);
     surveyId = id.toBuffer("le", 8);
     [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
@@ -110,14 +110,48 @@ describe("smartcontract", () => {
       })
       .rpc();
 
-    const account = await program.account.answer.fetch(answerPda);
-    assert.strictEqual(id.toString(), account.surveyId.toString());
-    assert.deepStrictEqual(account.answerList, answerList);
+    const answerAccount = await program.account.answer.fetch(answerPda);
+    const surveyAccount = await program.account.survey.fetch(surveyPda);
+    assert.strictEqual(id.toString(), answerAccount.surveyId.toString());
+    assert.deepStrictEqual(answerAccount.answerList, answerList);
+    assert.strictEqual(surveyAccount.currentParticipant.toString(), "1");
   });
 
   it("can change survey status!", async () => {});
 
-  it("can't fill survey when survey is closed!", async () => {});
+  it("can't fill survey when survey is closed!", async () => {
+    openTimestamp = new anchor.BN(now + (24 * 60 * 60));
+    const id = closeTimestamp.sub(openTimestamp);
+    surveyId = id.toBuffer("le", 8);
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
+        program.programId
+    )
+
+    try {
+      await program.methods
+      .createSurvey(
+        id,
+        surveyTitle,
+        surveyDescription,
+        openTimestamp,
+        closeTimestamp,
+        targetParticipant,
+        totalReward,
+        questionList
+      )
+      .accounts({
+        survey: surveyPda,
+        user: user.publicKey,
+        systemProgram: systemProgram
+      })
+      .rpc()
+    }
+    catch (error) {
+      const errorMessage = "Survey is closed.";
+      assert.strictEqual(error.errorMessage, errorMessage);
+    }
+  });
 
   it("can't create survey because there are still empty input!", async () => {});
 

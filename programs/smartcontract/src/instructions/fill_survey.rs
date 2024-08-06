@@ -33,27 +33,20 @@ pub fn handler(
     let answer = &mut ctx.accounts.answer;
     let user = &mut ctx.accounts.user;
     let survey = &mut ctx.accounts.survey;
-
     let amount = survey.reward_per_participant;
 
-    if survey.state == SurvzState::Closed {
-        return Err(SurvzError::SurveyIsClosed.into());
-    }
+    require!(survey.state == SurvzState::Open, SurvzError::SurveyIsClosed);
 
-    if answer_list.len() != 5 {
-        return Err(SurvzError::AllFieldMustBeAnswered.into());
-    }
+    require!(answer_list.len() == 5, SurvzError::AllFieldMustBeAnswered);
 
     answer.user = user.key();
     answer.survey_id = survey_id;
     answer.answer_list = answer_list;
 
-    let add_participant = survey.current_participant;
-    survey.current_participant += add_participant;
-
     survey.sub_lamports(amount)?;
     user.add_lamports(amount)?;
 
+    survey.current_participant += 1;
     survey.total_reward -= amount;
 
     if survey.current_participant == survey.target_participant {
