@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum SurvzState {
     Open,
     Closed
@@ -14,6 +14,7 @@ pub struct Survey {
     pub creator: Pubkey, // 32
     pub open_timestamp: u64, // 8
     pub close_timestamp: u64, // 8
+    pub current_participant: u64, // 8
     pub target_participant: u64, // 8
     pub total_reward: u64, // 8
     pub reward_per_participant: u64, // 8
@@ -22,5 +23,5 @@ pub struct Survey {
 }
 
 impl Survey {
-    pub const MAXIMUM_SIZE : usize = 8 + 8 + (4 + 150) + (4 + 300) + 32 + 8 +  8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
+    pub const MAXIMUM_SIZE : usize = 8 + 8 + (4 + 150) + (4 + 300) + 32 + 8 + 8 + 8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
 }

@@ -60,7 +60,8 @@ pub fn handler(
     };
     let cpi_context = CpiContext::new(ctx.accounts.system_program.to_account_info(), cpi_account);
     system_program::transfer(cpi_context, total_reward)?;
-
+    
+    let rent = Rent::get()?.minimum_balance(ctx.accounts.survey.to_account_info().data_len());
     let survey = &mut ctx.accounts.survey;
 
     survey.id = id;
@@ -69,8 +70,9 @@ pub fn handler(
     survey.creator = *ctx.accounts.user.key;
     survey.open_timestamp = open_timestamp;
     survey.close_timestamp = close_timestamp;
+    survey.current_participant = 0;
     survey.target_participant = target_participant;
-    survey.reward_per_participant = total_reward / target_participant;
+    survey.reward_per_participant = (total_reward - rent) / target_participant;
     survey.total_reward = total_reward;
     survey.state = match current_timestamp >= open_timestamp {
         true => SurvzState::Open,

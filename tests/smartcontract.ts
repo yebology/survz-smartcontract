@@ -18,40 +18,35 @@ describe("smartcontract", () => {
   let surveyId;
 
   const surveyTitle: string =
-      "Solana vs Ethereum: Blockchain Comparison Survey";
-    const surveyDescription: string =
-      "We are conducting a survey to compare the usability of Solana and Ethereum. Share your experiences and preferences regarding transaction speed, ease of use, and overall satisfaction with each platform. Your feedback will contribute to a comprehensive comparison of these leading blockchains.";
-    const now = new Date().getTime();
-    const openTimestamp = new anchor.BN(now);
-    const closeTimestamp = new anchor.BN(now + (2 * 24 * 60 * 60 * 1000));
-    const targetParticipant = new anchor.BN(10);
-    const totalReward = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
-    const questionList: string[] = [
-      "What do you like most about using Solana ?",
-      "What are the main challenges you’ve faced when using Ethereum ?",
-      "Describe a feature or aspect of Solana that you believe could be improved.",
-      "In your opinion, how does the developer experience on Solana compare to Ethereum? Please provide specific examples.",
-      "What factors influenced your preference between Solana and Ethereum ?",
-    ];
+    "Solana vs Ethereum: Blockchain Comparison Survey";
+  const surveyDescription: string =
+    "We are conducting a survey to compare the usability of Solana and Ethereum. Share your experiences and preferences regarding transaction speed, ease of use, and overall satisfaction with each platform. Your feedback will contribute to a comprehensive comparison of these leading blockchains.";
+  const now = new Date().getTime();
+  const openTimestamp = new anchor.BN(now / 1000);
+  const closeTimestamp = new anchor.BN(now +(2 * 24 * 60 * 60));
+  const targetParticipant = new anchor.BN(100);
+  const totalReward = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
+  const questionList: string[] = [
+    "What do you like most about using Solana ?",
+    "What are the main challenges you’ve faced when using Ethereum ?",
+    "Describe a feature or aspect of Solana that you believe could be improved.",
+    "In your opinion, how does the developer experience on Solana compare to Ethereum? Please provide specific examples.",
+    "What factors influenced your preference between Solana and Ethereum ?",
+  ];
 
-    const answerList: string[] = [
-      "What I like most about using Solana is its high transaction throughput and low fees. The speed of transactions on Solana is impressive compared to other blockchains, which enhances the user experience significantly.",
-      "The main challenges I've faced with Ethereum include high gas fees during peak times and slower transaction confirmation times compared to other blockchains. These issues can be frustrating when performing frequent or low-value transactions.",
-      "One aspect of Solana that I believe could be improved is its developer tooling and documentation. While the network is fast and efficient, having more comprehensive and user-friendly tools would greatly benefit developers building on Solana.",
-      "In my opinion, the developer experience on Solana is generally more streamlined due to its lower transaction fees and faster speeds. However, Ethereum's extensive documentation and established ecosystem offer a lot of support and resources, which can be very helpful for developers.",
-      "Factors that influenced my preference between Solana and Ethereum include transaction speed and cost. Solana's high speed and low transaction fees make it more attractive for applications that require frequent interactions, while Ethereum's established ecosystem and extensive developer resources make it a strong choice for projects that need mature tools and community support."
-    ];
+  const answerList: string[] = [
+    "I like Solana's high throughput and low fees. Transactions are impressively fast.",
+    "Ethereum's high gas fees and slow confirmations are challenging.",
+    "Solana needs better developer tools and documentation.",
+    "Solana has lower fees and faster speeds, but Ethereum offers more support.",
+    "Solana is best for frequent transactions; Ethereum is best for mature projects.",
+  ];
 
   it("can create survey!", async () => {
     const id = closeTimestamp.sub(openTimestamp);
-    console.log(id.toNumber());
     surveyId = id.toBuffer("le", 8);
-    [surveyPda, ] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("survey"), 
-        user.publicKey.toBuffer(),
-        surveyId
-      ],
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
       program.programId
     );
 
@@ -96,30 +91,27 @@ describe("smartcontract", () => {
   it("can fill survey!", async () => {
     const surveyIdBn = new anchor.BN(surveyId, "le");
     const id = new anchor.BN(surveyIdBn.toNumber());
-    console.log(id);
-    [answerPda, ] = await anchor.web3.PublicKey.findProgramAddressSync(
+    [answerPda] = await anchor.web3.PublicKey.findProgramAddressSync(
       [
-        Buffer.from("answer"),
+        Buffer.from("answer"), 
         user.publicKey.toBuffer(),
         surveyId
-      ],
+    ],
       program.programId
     );
 
     await program.methods
-    .fillSurvey(
-      id,
-      answerList
-    )
-    .accounts({
-      user: user.publicKey,
-      answer: answerPda,
-      survey: surveyPda,
-      systemProgram: SystemProgram.programId
-    })
-    .rpc()
+      .fillSurvey(id, answerList)
+      .accounts({
+        user: user.publicKey,
+        answer: answerPda,
+        survey: surveyPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
 
     const account = await program.account.answer.fetch(answerPda);
+    assert.strictEqual(id.toString(), account.surveyId.toString());
     assert.deepStrictEqual(account.answerList, answerList);
   });
 
