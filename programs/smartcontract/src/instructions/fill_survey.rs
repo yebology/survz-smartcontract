@@ -57,5 +57,10 @@ pub fn handler(
         survey.state = SurvzState::Closed;
     }
 
+    emit!(SurveyFilled {
+        user: user.key(),
+        survey_account: survey.key()
+    });
+
     Ok(())
 }

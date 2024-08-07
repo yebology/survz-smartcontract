@@ -35,8 +35,7 @@ pub fn handler(
     question_list: Vec<String>
 ) -> Result<()> {
 
-    let clock = Clock::get()?;
-    let current_timestamp = clock.unix_timestamp as u64;
+    let current_timestamp = Clock::get().unwrap().unix_timestamp as u64;
     let rent = Rent::get()?.minimum_balance(ctx.accounts.survey.to_account_info().data_len());
     let survey: &mut Account<Survey> = &mut ctx.accounts.survey;
 
@@ -81,14 +80,13 @@ pub fn handler(
     survey.target_participant = target_participant;
     survey.reward_per_participant = (total_reward - rent) / target_participant;
     survey.total_reward = total_reward;
-    survey.state = match current_timestamp >= open_timestamp {
-        true => SurvzState::Open,
-        false => SurvzState::Closed
-    };
+    survey.state = SurvzState::Open;
     survey.question_list = question_list;
-    msg!("current timestamp: {}", current_timestamp);
-    msg!("open timestamp: {}", open_timestamp);
-    msg!("close timestamp: {}", close_timestamp);
+
+    emit!(SurveyCreated {
+        creator: *ctx.accounts.user.key,
+        survey_account: survey.key()
+    });
     
     Ok(())
 }

@@ -1,14 +1,16 @@
     use anchor_lang::prelude::*;
 
     pub mod errors;
+    pub mod events;
     pub mod instructions;
     pub mod state;
 
     use errors::*;
+    use events::*;
     use state::*;
     use instructions::*;
 
-    declare_id!("GVVMixtE5VECdKHJzaJSMgbFNjifwmJTLgb4skuwDeMK");
+    declare_id!("7FaYpf16DM4z6mAZUMvtqUSQgxjW6RQJ4N7uGMSxSwr3");
 
     #[program]
     pub mod smartcontract {
@@ -52,8 +54,4 @@
             Ok(())
         }
 
-        pub fn change_status(ctx: Context<ChangeStatus>) -> Result<()> {
-            instructions::change_status::handler(ctx)?;
-            Ok(())
-        }
     }

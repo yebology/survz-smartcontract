@@ -4,14 +4,17 @@
 seeds = false
 skip-lint = false
 
+[programs.devnet]
+smartcontract = "7FaYpf16DM4z6mAZUMvtqUSQgxjW6RQJ4N7uGMSxSwr3"
+
 [programs.localnet]
-smartcontract = "GVVMixtE5VECdKHJzaJSMgbFNjifwmJTLgb4skuwDeMK"
+smartcontract = "7FaYpf16DM4z6mAZUMvtqUSQgxjW6RQJ4N7uGMSxSwr3"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "/home/yobel/.config/solana/id.json"
 
 [scripts]

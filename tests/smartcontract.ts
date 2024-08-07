@@ -1,11 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Smartcontract } from "../target/types/smartcontract";
-import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
+import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { assert } from "chai";
 
 describe("smartcontract", () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
@@ -122,49 +121,6 @@ describe("smartcontract", () => {
     assert.strictEqual(id.toString(), answerAccount.surveyId.toString());
     assert.deepStrictEqual(answerAccount.answerList, answerList);
     assert.strictEqual(surveyAccount.currentParticipant.toString(), "1");
-  });
-
-  it("can change survey status!", async () => {});
-
-  it("can't fill survey when survey is closed!", async () => {
-    const twoDaysLater = new Date(currentDate);
-    twoDaysLater.setDate(currentDate.getDate() + 2);
-    const openTimestamp = Math.floor(twoDaysLater.getTime() / 1000);
-
-    const threeDaysLater = new Date(currentDate);
-    threeDaysLater.setDate(currentDate.getDate() + 4);
-    const closeTimestamp = Math.floor(threeDaysLater.getTime() / 1000);
-
-    const convertedOpenTimestamp = new anchor.BN(openTimestamp);
-    const convertedCloseTimestamp = new anchor.BN(closeTimestamp);
-    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
-    surveyId = id.toBuffer("le", 8);
-    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
-      program.programId
-    );
-
-    try {
-      await program.methods
-        .createSurvey(
-          id,
-          surveyTitle,
-          surveyDescription,
-          convertedOpenTimestamp,
-          convertedCloseTimestamp,
-          targetParticipant,
-          totalReward,
-          questionList
-        )
-        .accounts({
-          survey: surveyPda,
-          user: user.publicKey,
-          systemProgram: systemProgram,
-        })
-        .rpc();
-    } catch (error) {
-      assert.ok("Survey is closed.");
-    }
   });
 
   it("can't create survey because there are still empty input!", async () => {
@@ -305,6 +261,39 @@ describe("smartcontract", () => {
   });
 
   it("can't create this survey because this survey has insufficient funds!", async () => {
+    const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+    const dataSize = 8 + 8 + (4 + 150) + (4 + 300) + 32 + 8 + 8 + 8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
+    const minBalance = await connection.getMinimumBalanceForRentExemption(dataSize);
+    const totalReward = new anchor.BN(minBalance);
 
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
+    const surveyId = id.toBuffer("le", 8);
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
+      program.programId
+    );
+
+    try {
+      await program.methods
+      .createSurvey(
+        id,
+        surveyTitle,
+        surveyDescription,
+        convertedOpenTimestamp,
+        convertedCloseTimestamp,
+        targetParticipant,
+        totalReward,
+        questionList
+      )
+      .accounts({
+        user: user.publicKey,
+        survey: surveyPda,
+        systemProgram: systemProgram,
+      })
+      .rpc();
+    }
+    catch (error) {
+      assert.ok("Insufficient funds.");
+    }
   });
 });

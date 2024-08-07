@@ -4,6 +4,7 @@
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
     },
     "dependencies": {
+        "@clockwork-xyz/sdk": "^0.3.4",
         "@coral-xyz/anchor": "^0.29.0",
         "@solana/web3.js": "^1.95.2",
         "assert": "^2.1.0"
