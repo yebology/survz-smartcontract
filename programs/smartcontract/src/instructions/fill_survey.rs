@@ -39,6 +39,10 @@ pub fn handler(
 
     require!(answer_list.len() == 5, SurvzError::AllFieldMustBeAnswered);
 
+    for answer in answer_list.iter() {
+        require!(!answer.trim().is_empty(), SurvzError::InvalidSurveyInput);
+    }
+
     answer.user = user.key();
     answer.survey_id = survey_id;
     answer.answer_list = answer_list;

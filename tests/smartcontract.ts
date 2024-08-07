@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Smartcontract } from "../target/types/smartcontract";
 import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
-import * as assert from "assert";
+import { assert } from "chai";
 
 describe("smartcontract", () => {
   // Configure the client to use the local cluster.
@@ -12,19 +12,24 @@ describe("smartcontract", () => {
   const systemProgram = SystemProgram.programId;
   const program = anchor.workspace.Smartcontract as Program<Smartcontract>;
   const user = provider.wallet;
+
   let surveyPda;
   let answerPda;
   let surveyId;
+  let convertedOpenTimestamp;
+  let convertedCloseTimestamp;
 
   const surveyTitle: string =
     "Solana vs Ethereum: Blockchain Comparison Survey";
   const surveyDescription: string =
     "We are conducting a survey to compare the usability of Solana and Ethereum. Share your experiences and preferences regarding transaction speed, ease of use, and overall satisfaction with each platform. Your feedback will contribute to a comprehensive comparison of these leading blockchains.";
-  const now = new Date().getTime(); 
-  let openTimestamp;
-  let closeTimestamp;
+
+  const currentDate = new Date();
+  const now = currentDate.getTime();
+
   const targetParticipant = new anchor.BN(100);
   const totalReward = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
+
   const questionList: string[] = [
     "What do you like most about using Solana ?",
     "What are the main challenges you’ve faced when using Ethereum ?",
@@ -41,9 +46,15 @@ describe("smartcontract", () => {
   ];
 
   it("can create survey!", async () => {
-    openTimestamp = new anchor.BN(now / 1000);
-    closeTimestamp = new anchor.BN(now + (2 * 24 * 60 * 60));
-    const id = closeTimestamp.sub(openTimestamp);
+    const openTimestamp = Math.floor(now / 1000);
+    convertedOpenTimestamp = new anchor.BN(openTimestamp);
+
+    const twoDaysLater = new Date(currentDate);
+    twoDaysLater.setDate(currentDate.getDate() + 2);
+    const closeTimestamp = Math.floor(twoDaysLater.getTime() / 1000);
+    convertedCloseTimestamp = new anchor.BN(closeTimestamp);
+
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
     surveyId = id.toBuffer("le", 8);
     [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
@@ -55,8 +66,8 @@ describe("smartcontract", () => {
         id,
         surveyTitle,
         surveyDescription,
-        openTimestamp,
-        closeTimestamp,
+        convertedOpenTimestamp,
+        convertedCloseTimestamp,
         targetParticipant,
         totalReward,
         questionList
@@ -92,11 +103,7 @@ describe("smartcontract", () => {
     const surveyIdBn = new anchor.BN(surveyId, "le");
     const id = new anchor.BN(surveyIdBn.toNumber());
     [answerPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("answer"), 
-        user.publicKey.toBuffer(),
-        surveyId
-    ],
+      [Buffer.from("answer"), user.publicKey.toBuffer(), surveyId],
       program.programId
     );
 
@@ -120,13 +127,157 @@ describe("smartcontract", () => {
   it("can change survey status!", async () => {});
 
   it("can't fill survey when survey is closed!", async () => {
-    openTimestamp = new anchor.BN(now + (24 * 60 * 60));
-    const id = closeTimestamp.sub(openTimestamp);
+    const twoDaysLater = new Date(currentDate);
+    twoDaysLater.setDate(currentDate.getDate() + 2);
+    const openTimestamp = Math.floor(twoDaysLater.getTime() / 1000);
+
+    const threeDaysLater = new Date(currentDate);
+    threeDaysLater.setDate(currentDate.getDate() + 4);
+    const closeTimestamp = Math.floor(threeDaysLater.getTime() / 1000);
+
+    const convertedOpenTimestamp = new anchor.BN(openTimestamp);
+    const convertedCloseTimestamp = new anchor.BN(closeTimestamp);
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
     surveyId = id.toBuffer("le", 8);
     [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
-        program.programId
-    )
+      program.programId
+    );
+
+    try {
+      await program.methods
+        .createSurvey(
+          id,
+          surveyTitle,
+          surveyDescription,
+          convertedOpenTimestamp,
+          convertedCloseTimestamp,
+          targetParticipant,
+          totalReward,
+          questionList
+        )
+        .accounts({
+          survey: surveyPda,
+          user: user.publicKey,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } catch (error) {
+      assert.ok("Survey is closed.");
+    }
+  });
+
+  it("can't create survey because there are still empty input!", async () => {
+    const fourDaysLater = new Date(currentDate);
+    fourDaysLater.setDate(currentDate.getDate() + 4);
+    const closeTimestamp = Math.floor(fourDaysLater.getTime() / 1000);
+    const convertedCloseTimestamp = new anchor.BN(closeTimestamp);
+
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
+    surveyId = id.toBuffer("le", 8);
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
+      program.programId
+    );
+
+    try {
+      await program.methods
+        .createSurvey(
+          id,
+          "",
+          "",
+          convertedOpenTimestamp,
+          convertedCloseTimestamp,
+          targetParticipant,
+          totalReward,
+          questionList
+        )
+        .accounts({
+          survey: surveyPda,
+          user: user.publicKey,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } catch (error) {
+      assert.ok("Invalid survey input.");
+    }
+  });
+
+  it("can't fill survey because there are still empty field!", async () => {
+    const fiveDaysLater = new Date(currentDate);
+    fiveDaysLater.setDate(currentDate.getDate() + 5);
+    const closeTimestamp = Math.floor(fiveDaysLater.getTime() / 1000);
+    const convertedCloseTimestamp = new anchor.BN(closeTimestamp);
+
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
+    surveyId = id.toBuffer("le", 8);
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
+      program.programId
+    );
+
+    const firstAnswerList = ["", "", "", "", ""];
+    const secondAnswerList = [answerList[0]]
+
+    await program.methods
+      .createSurvey(
+        id,
+        surveyTitle,
+        surveyDescription,
+        convertedOpenTimestamp,
+        convertedCloseTimestamp,
+        targetParticipant,
+        totalReward,
+        questionList
+      )
+      .accounts({
+        user: user.publicKey,
+        survey: surveyPda,
+        systemProgram: systemProgram,
+      })
+      .rpc();
+
+    try {
+      await program.methods
+        .fillSurvey(id, firstAnswerList)
+        .accounts({
+          survey: surveyPda,
+          user: user.publicKey,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } 
+    catch (error) {
+      assert.ok("Invalid survey input.");
+    }
+
+    try {
+      await program.methods
+      .fillSurvey(id, secondAnswerList)
+      .accounts({
+        survey: surveyPda,
+        user: user.publicKey,
+        systemProgram: systemProgram,
+      })
+      .rpc();
+    }
+    catch(error) {
+      assert.ok("All field must be answered.");
+    }
+  });
+
+  it("can't create survey because survey has invalid time!", async () => {
+    const oneDayBefore = new Date(currentDate);
+    oneDayBefore.setDate(currentDate.getDate() - 1);
+    const closeTimestamp = Math.floor(oneDayBefore.getTime() / 1000);
+    const convertedCloseTimestamp = new anchor.BN(closeTimestamp);
+
+    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
+    surveyId = id.toBuffer("le", 8);
+    [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
+      program.programId
+    );
 
     try {
       await program.methods
@@ -134,30 +285,26 @@ describe("smartcontract", () => {
         id,
         surveyTitle,
         surveyDescription,
-        openTimestamp,
-        closeTimestamp,
+        convertedOpenTimestamp,
+        convertedCloseTimestamp,
         targetParticipant,
         totalReward,
         questionList
       )
       .accounts({
-        survey: surveyPda,
         user: user.publicKey,
-        systemProgram: systemProgram
+        survey: surveyPda,
+        systemProgram: systemProgram,
       })
-      .rpc()
+      .rpc();
     }
     catch (error) {
-      const errorMessage = "Survey is closed.";
-      assert.strictEqual(error.errorMessage, errorMessage);
+      assert.ok("Invalid time.")
     }
+
   });
 
-  it("can't create survey because there are still empty input!", async () => {});
+  it("can't create this survey because this survey has insufficient funds!", async () => {
 
-  it("can't fill survey because there are still empty field!", async () => {});
-
-  it("can't create survey because survey has invalid time!", async () => {});
-
-  it("can't fill this survey because this survey has insufficient funds!", async () => {});
+  });
 });

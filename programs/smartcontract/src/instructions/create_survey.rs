@@ -45,7 +45,7 @@ pub fn handler(
             id != 0 && 
             !title.is_empty() && 
             !description.is_empty() &&
-            !question_list.is_empty() &&
+            question_list.len() == 5 &&
             total_reward != 0 &&
             target_participant != 0
         ),
@@ -86,6 +86,9 @@ pub fn handler(
         false => SurvzState::Closed
     };
     survey.question_list = question_list;
-
+    msg!("current timestamp: {}", current_timestamp);
+    msg!("open timestamp: {}", open_timestamp);
+    msg!("close timestamp: {}", close_timestamp);
+    
     Ok(())
 }
