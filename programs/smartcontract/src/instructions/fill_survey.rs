@@ -1,3 +1,5 @@
+use std::thread::current;
+
 use anchor_lang::prelude::*;
 
 use crate::*;
@@ -34,14 +36,30 @@ pub fn handler(
     let user = &mut ctx.accounts.user;
     let survey = &mut ctx.accounts.survey;
     let amount = survey.reward_per_participant;
+    let current_timestamp = Clock::get().unwrap().unix_timestamp as u64;
 
-    require!(survey.state == SurvzState::Open, SurvzError::SurveyIsClosed);
+    survey.state = match 
+    current_timestamp >= survey.open_timestamp && 
+    current_timestamp < survey.close_timestamp && 
+    survey.current_participant != survey.target_participant {
+        true => SurvzState::Open,
+        false => SurvzState::Closed
+    };
 
-    require!(answer_list.len() == 5, SurvzError::AllFieldMustBeAnswered);
+    require!(
+        (
+            survey.state == SurvzState::Open
+        ),
+        SurvzError::SurveyIsClosed
+    );
 
-    for answer in answer_list.iter() {
-        require!(!answer.trim().is_empty(), SurvzError::InvalidSurveyInput);
-    }
+    require!(
+        (
+            answer_list.len() == 5 &&
+            answer_list.iter().all(|answer| !answer.trim().is_empty())
+        ),
+        SurvzError::AllFieldMustBeAnswered
+    );
 
     answer.user = user.key();
     answer.survey_id = survey_id;
@@ -52,10 +70,6 @@ pub fn handler(
 
     survey.current_participant += 1;
     survey.total_reward -= amount;
-
-    if survey.current_participant == survey.target_participant {
-        survey.state = SurvzState::Closed;
-    }
 
     emit!(SurveyFilled {
         user: user.key(),

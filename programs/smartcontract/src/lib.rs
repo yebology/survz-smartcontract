@@ -10,7 +10,7 @@
     use state::*;
     use instructions::*;
 
-    declare_id!("7FaYpf16DM4z6mAZUMvtqUSQgxjW6RQJ4N7uGMSxSwr3");
+    declare_id!("E4ToFZT9sWoMewsLiVKweYt2QRHwUFBZ2dJcw92br2Dx");
 
     #[program]
     pub mod smartcontract {
@@ -24,7 +24,7 @@
             open_timestamp: u64, 
             close_timestamp: u64, 
             target_participant: u64, 
-            reward_per_participant: u64, 
+            total_reward: u64, 
             question_list: Vec<String>
         ) -> Result<()> {
             instructions::create_survey::handler(
@@ -35,7 +35,7 @@
                 open_timestamp, 
                 close_timestamp, 
                 target_participant, 
-                reward_per_participant, 
+                total_reward, 
                 question_list
             )?;
             Ok(())

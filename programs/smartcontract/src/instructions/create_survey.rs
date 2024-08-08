@@ -41,27 +41,32 @@ pub fn handler(
 
     require!(
         (
-            id != 0 && 
+            id > 0 && 
             !title.is_empty() && 
             !description.is_empty() &&
             question_list.len() == 5 &&
-            total_reward != 0 &&
-            target_participant != 0
+            total_reward > 0 &&
+            target_participant > 0
         ),
         SurvzError::InvalidSurveyInput
     );
 
     require!(
         (
-            open_timestamp != 0 &&
-            close_timestamp != 0 &&
+            open_timestamp > 0 &&
+            close_timestamp > 0 &&
             open_timestamp < close_timestamp &&
             current_timestamp < close_timestamp
         ),
         SurvzError::InvalidTime
     );
     
-    require!(total_reward > rent, SurvzError::InsufficientFunds);
+    require!(
+        (
+            total_reward > rent
+        ),
+        SurvzError::InsufficientFunds
+    );
 
     let cpi_account = system_program::Transfer {
         from: ctx.accounts.user.to_account_info(),
@@ -78,10 +83,13 @@ pub fn handler(
     survey.close_timestamp = close_timestamp;
     survey.current_participant = 0;
     survey.target_participant = target_participant;
-    survey.reward_per_participant = (total_reward - rent) / target_participant;
-    survey.total_reward = total_reward;
-    survey.state = SurvzState::Open;
+    survey.total_reward = total_reward - rent;
+    survey.reward_per_participant = survey.total_reward / target_participant;
     survey.question_list = question_list;
+    survey.state = match current_timestamp >= open_timestamp {
+        true => SurvzState::Open,
+        false => SurvzState::Closed
+    };
 
     emit!(SurveyCreated {
         creator: *ctx.accounts.user.key,
