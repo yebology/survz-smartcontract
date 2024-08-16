@@ -23,7 +23,7 @@ pub struct CreateSurvey<'info> {
     pub system_program: Program<'info, System>
 }
 
-pub fn handler(
+pub fn create_handler(
     ctx: Context<CreateSurvey>, 
     id: u64,
     title: String, 
@@ -32,7 +32,7 @@ pub fn handler(
     close_timestamp: u64, 
     target_participant: u64, 
     total_reward: u64, 
-    question_list: Vec<String>
+    question_list: [String; 5]
 ) -> Result<()> {
 
     let current_timestamp = Clock::get().unwrap().unix_timestamp as u64;
@@ -83,8 +83,8 @@ pub fn handler(
     survey.close_timestamp = close_timestamp;
     survey.current_participant = 0;
     survey.target_participant = target_participant;
-    survey.total_reward = total_reward - rent;
-    survey.reward_per_participant = survey.total_reward / target_participant;
+    survey.total_reward = total_reward;
+    survey.reward_per_participant = total_reward / target_participant;
     survey.question_list = question_list;
     survey.state = match current_timestamp >= open_timestamp {
         true => SurvzState::Open,

@@ -2,11 +2,18 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct Answer {
-    pub user: Pubkey, // 32
-    pub survey_id: u64, // 8
-    pub answer_list: Vec<String>, // 4 + ((256 + 44) * 5) // maximum 256 bytes/question + 44 bytes other for safety
+    pub user: Pubkey,
+    pub survey_id: u64,
+    pub answer_list: Vec<String>
 }
 
 impl Answer {
-    pub const MAXIMUM_SIZE : usize = 8 + 32 + 8 + (4 + ((256 + 44) * 5));
+    const USER_SPACE : usize = 32;
+    const SURVEY_ID_SPACE : usize = 8;
+    const ANSWER_LIST_SPACE : usize = 10000;
+
+    pub const MAXIMUM_SIZE : usize = 
+        Self::USER_SPACE + 
+        Self::SURVEY_ID_SPACE + 
+        Self::ANSWER_LIST_SPACE;
 }

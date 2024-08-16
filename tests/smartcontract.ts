@@ -1,7 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Smartcontract } from "../target/types/smartcontract";
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
+import {
+  clusterApiUrl,
+  Connection,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
+} from "@solana/web3.js";
 import { assert } from "chai";
 
 describe("smartcontract", () => {
@@ -21,7 +26,7 @@ describe("smartcontract", () => {
   const surveyTitle: string =
     "Solana vs Ethereum: Blockchain Comparison Survey";
   const surveyDescription: string =
-    "We are conducting a survey to compare the usability of Solana and Ethereum. Share your experiences and preferences regarding transaction speed, ease of use, and overall satisfaction with each platform. Your feedback will contribute to a comprehensive comparison of these leading blockchains.";
+    "We are conducting a survey to compare the usability of Solana and Ethereum.";
 
   const currentDate = new Date();
   const now = currentDate.getTime();
@@ -33,7 +38,7 @@ describe("smartcontract", () => {
     "What do you like most about using Solana ?",
     "What are the main challenges you’ve faced when using Ethereum ?",
     "Describe a feature or aspect of Solana that you believe could be improved.",
-    "In your opinion, how does the developer experience on Solana compare to Ethereum? Please provide specific examples.",
+    "In your opinion, how does the developer experience on Solana compare to Ethereum?",
     "What factors influenced your preference between Solana and Ethereum ?",
   ];
   const answerList: string[] = [
@@ -53,7 +58,7 @@ describe("smartcontract", () => {
     const closeTimestamp = Math.floor(twoDaysLater.getTime() / 1000);
     convertedCloseTimestamp = new anchor.BN(closeTimestamp);
 
-    const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
+    const id = new anchor.BN(now);
     surveyId = id.toBuffer("le", 8);
     [surveyPda] = await anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("survey"), user.publicKey.toBuffer(), surveyId],
@@ -96,6 +101,8 @@ describe("smartcontract", () => {
     );
     assert.strictEqual(account.totalReward.toString(), totalReward.toString());
     assert.deepStrictEqual(account.questionList, questionList);
+    const surveyState = Object.keys(account.state)[0] === 'open' ? 'Open' : 'Closed';
+    assert.deepStrictEqual(surveyState, "Open");
   });
 
   it("can fill survey!", async () => {
@@ -173,7 +180,7 @@ describe("smartcontract", () => {
     );
 
     const firstAnswerList = ["", "", "", "", ""];
-    const secondAnswerList = [answerList[0]]
+    const secondAnswerList = [answerList[0]];
 
     await program.methods
       .createSurvey(
@@ -202,22 +209,20 @@ describe("smartcontract", () => {
           systemProgram: systemProgram,
         })
         .rpc();
-    } 
-    catch (error) {
+    } catch (error) {
       assert.ok("Invalid survey input.");
     }
 
     try {
       await program.methods
-      .fillSurvey(id, secondAnswerList)
-      .accounts({
-        survey: surveyPda,
-        user: user.publicKey,
-        systemProgram: systemProgram,
-      })
-      .rpc();
-    }
-    catch(error) {
+        .fillSurvey(id, secondAnswerList)
+        .accounts({
+          survey: surveyPda,
+          user: user.publicKey,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } catch (error) {
       assert.ok("All field must be answered.");
     }
   });
@@ -237,33 +242,46 @@ describe("smartcontract", () => {
 
     try {
       await program.methods
-      .createSurvey(
-        id,
-        surveyTitle,
-        surveyDescription,
-        convertedOpenTimestamp,
-        convertedCloseTimestamp,
-        targetParticipant,
-        totalReward,
-        questionList
-      )
-      .accounts({
-        user: user.publicKey,
-        survey: surveyPda,
-        systemProgram: systemProgram,
-      })
-      .rpc();
+        .createSurvey(
+          id,
+          surveyTitle,
+          surveyDescription,
+          convertedOpenTimestamp,
+          convertedCloseTimestamp,
+          targetParticipant,
+          totalReward,
+          questionList
+        )
+        .accounts({
+          user: user.publicKey,
+          survey: surveyPda,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } catch (error) {
+      assert.ok("Invalid time.");
     }
-    catch (error) {
-      assert.ok("Invalid time.")
-    }
-
   });
 
   it("can't create this survey because this survey has insufficient funds!", async () => {
     const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-    const dataSize = 8 + 8 + (4 + 150) + (4 + 300) + 32 + 8 + 8 + 8 + 8 + 8 + 8 + 1 + (4 + ((256 + 44) * 5));
-    const minBalance = await connection.getMinimumBalanceForRentExemption(dataSize);
+    const dataSize =
+      8 +
+      8 +
+      (4 + 150) +
+      (4 + 300) +
+      32 +
+      8 +
+      8 +
+      8 +
+      8 +
+      8 +
+      8 +
+      1 +
+      (4 + (256 + 44) * 5);
+    const minBalance = await connection.getMinimumBalanceForRentExemption(
+      dataSize
+    );
     const totalReward = new anchor.BN(minBalance);
 
     const id = convertedCloseTimestamp.sub(convertedOpenTimestamp);
@@ -275,25 +293,25 @@ describe("smartcontract", () => {
 
     try {
       await program.methods
-      .createSurvey(
-        id,
-        surveyTitle,
-        surveyDescription,
-        convertedOpenTimestamp,
-        convertedCloseTimestamp,
-        targetParticipant,
-        totalReward,
-        questionList
-      )
-      .accounts({
-        user: user.publicKey,
-        survey: surveyPda,
-        systemProgram: systemProgram,
-      })
-      .rpc();
-    }
-    catch (error) {
+        .createSurvey(
+          id,
+          surveyTitle,
+          surveyDescription,
+          convertedOpenTimestamp,
+          convertedCloseTimestamp,
+          targetParticipant,
+          totalReward,
+          questionList
+        )
+        .accounts({
+          user: user.publicKey,
+          survey: surveyPda,
+          systemProgram: systemProgram,
+        })
+        .rpc();
+    } catch (error) {
       assert.ok("Insufficient funds.");
     }
   });
+
 });

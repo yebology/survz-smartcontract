@@ -1,5 +1,3 @@
-use std::thread::current;
-
 use anchor_lang::prelude::*;
 
 use crate::*;
@@ -8,7 +6,7 @@ use crate::*;
 #[instruction(survey_id: u64)]
 pub struct FillSurvey<'info> {
     #[account(
-        init_if_needed,
+        init,
         payer=user,
         space=Answer::MAXIMUM_SIZE,
         seeds=[
@@ -26,7 +24,7 @@ pub struct FillSurvey<'info> {
     pub system_program: Program<'info, System>
 }
 
-pub fn handler(
+pub fn fill_handler(
     ctx: Context<FillSurvey>,
     survey_id: u64,
     answer_list: Vec<String>
