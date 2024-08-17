@@ -11,7 +11,7 @@ pub struct Answer {
 impl Answer {
     const USER_SPACE : usize = 32;
     const SURVEY_ID_SPACE : usize = 8;
-    const ANSWER_LIST_SPACE : usize = 10000;
+    const ANSWER_LIST_SPACE : usize = 4 + (200 * 5);
 
     pub const MAXIMUM_SIZE : usize = 
         Self::USER_SPACE + 
