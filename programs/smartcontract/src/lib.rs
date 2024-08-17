@@ -10,7 +10,7 @@
     use state::*;
     use instructions::*;
 
-    declare_id!("Aq4XKH5oLKUNDwxDqD7RDyYz76ZqY3HP1ttb8KW9HMop");
+    declare_id!("7bfa2DiKuMvy6vDxyTjfnvPt62JuQG39XWbPtgJyHwYd");
 
     #[program]
     pub mod smartcontract {
@@ -44,7 +44,7 @@
         pub fn fill_survey(
             ctx: Context<FillSurvey>,
             survey_id: u64,
-            answer_list: Vec<String>
+            answer_list: [String; 5]
         ) -> Result<()> {
             instructions::fill_survey::fill_handler(
                 ctx,

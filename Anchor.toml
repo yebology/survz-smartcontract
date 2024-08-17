@@ -5,10 +5,10 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-smartcontract = "Aq4XKH5oLKUNDwxDqD7RDyYz76ZqY3HP1ttb8KW9HMop"
+smartcontract = "7bfa2DiKuMvy6vDxyTjfnvPt62JuQG39XWbPtgJyHwYd"
 
 [programs.localnet]
-smartcontract = "Aq4XKH5oLKUNDwxDqD7RDyYz76ZqY3HP1ttb8KW9HMop"
+smartcontract = "7bfa2DiKuMvy6vDxyTjfnvPt62JuQG39XWbPtgJyHwYd"
 
 [registry]
 url = "https://api.apr.dev"

@@ -27,7 +27,7 @@ pub struct FillSurvey<'info> {
 pub fn fill_handler(
     ctx: Context<FillSurvey>,
     survey_id: u64,
-    answer_list: Vec<String>
+    answer_list: [String; 5]
 ) -> Result<()> {
     
     let answer = &mut ctx.accounts.answer;
@@ -61,6 +61,7 @@ pub fn fill_handler(
 
     answer.user = user.key();
     answer.survey_id = survey_id;
+    answer.timestamp = current_timestamp;
     answer.answer_list = answer_list;
 
     survey.sub_lamports(amount)?;

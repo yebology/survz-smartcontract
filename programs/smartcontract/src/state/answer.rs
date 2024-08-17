@@ -4,7 +4,8 @@ use anchor_lang::prelude::*;
 pub struct Answer {
     pub user: Pubkey,
     pub survey_id: u64,
-    pub answer_list: Vec<String>
+    pub timestamp: u64,
+    pub answer_list: [String; 5]
 }
 
 impl Answer {
